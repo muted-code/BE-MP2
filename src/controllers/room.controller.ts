@@ -21,7 +21,7 @@ export const createRoom = async (req: Request, res: Response): Promise<void> => 
       name,
       createdBy: uid,
       createdAt: new Date().toISOString(),
-      // Espacio para futuros campos como participants, status, etc.
+      participants: [uid], // Agregamos el creador como participante inicial
     };
 
     const roomRef = await db.collection('rooms').add(newRoom);
@@ -47,15 +47,23 @@ export const getMyRooms = async (req: Request, res: Response): Promise<void> => 
     }
 
     const roomsRef = db.collection('rooms');
-    const snapshot = await roomsRef.where('createdBy', '==', uid).get();
+    
+    // Obtenemos las salas donde el usuario es creador
+    const createdBySnapshot = await roomsRef.where('createdBy', '==', uid).get();
+    // Obtenemos las salas donde el usuario es participante
+    const participantsSnapshot = await roomsRef.where('participants', 'array-contains', uid).get();
 
-    const rooms: any[] = [];
-    snapshot.forEach(doc => {
-      rooms.push({
-        id: doc.id,
-        ...doc.data()
-      });
+    const roomsMap = new Map();
+
+    createdBySnapshot.forEach(doc => {
+      roomsMap.set(doc.id, { id: doc.id, ...doc.data() });
     });
+
+    participantsSnapshot.forEach(doc => {
+      roomsMap.set(doc.id, { id: doc.id, ...doc.data() });
+    });
+
+    const rooms = Array.from(roomsMap.values());
 
     res.status(200).json(rooms);
   } catch (error: any) {
@@ -158,6 +166,43 @@ export const getRoomById = async (req: Request, res: Response): Promise<void> =>
     });
   } catch (error: any) {
     console.error('Error fetching room by ID:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
+
+export const joinRoom = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const uid = req.uid;
+    const { id } = req.params;
+
+    if (!uid) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const roomRef = db.collection('rooms').doc(id as string);
+    const room = await roomRef.get();
+
+    if (!room.exists) {
+      res.status(404).json({ error: 'La sala no existe o el enlace de invitación es inválido' });
+      return;
+    }
+
+    const data = room.data()!;
+    let participants = data.participants || [data.createdBy];
+    
+    if (!participants.includes(uid)) {
+      participants.push(uid);
+      await roomRef.update({ participants });
+    }
+
+    res.status(200).json({
+      id: room.id,
+      ...data,
+      participants
+    });
+  } catch (error: any) {
+    console.error('Error joining room:', error);
     res.status(500).json({ error: error.message || 'Internal server error' });
   }
 };

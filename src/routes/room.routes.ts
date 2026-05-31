@@ -1,6 +1,6 @@
 import { Router } from 'express';
-// 1. Agregamos clearRoomMessages a la importación
-import { createRoom, getMyRooms, deleteRoom, updateRoom, getRoomById, getRoomMessages, clearRoomMessages } from '../controllers/room.controller';
+// 1. Agregamos clearRoomMessages y joinRoom a la importación
+import { createRoom, getMyRooms, deleteRoom, updateRoom, getRoomById, getRoomMessages, clearRoomMessages, joinRoom } from '../controllers/room.controller';
 import { authMiddleware } from '../middlewares/authMiddleware';
 
 const router = Router();
@@ -8,6 +8,7 @@ const router = Router();
 // Rutas básicas de creación y obtención
 router.post('/', authMiddleware, createRoom);
 router.get('/', authMiddleware, getMyRooms);
+router.post('/:id/join', authMiddleware, joinRoom);
 
 // 2. Obtener sala por ID (Para unirse con enlace/ID)
 /**
