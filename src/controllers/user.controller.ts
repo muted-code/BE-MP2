@@ -51,8 +51,9 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
 
     // Check email collision if email is being updated
     if (email) {
-      if (!email.endsWith('@correounivalle.edu.co')) {
-        res.status(400).json({ error: 'Solo se permiten correos institucionales de la Universidad del Valle (@correounivalle.edu.co)' });
+      const ALLOWED_EXCEPTIONS = ['e.alp.walter.correa@cali.edu.co'];
+      if (!email.endsWith('@correounivalle.edu.co') && !ALLOWED_EXCEPTIONS.includes(email)) {
+        res.status(400).json({ error: 'Solo se permiten correos institucionales o autorizados' });
         return;
       }
       const emailSnapshot = await usersRef.where('email', '==', email).get();
