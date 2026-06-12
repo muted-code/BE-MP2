@@ -1,6 +1,6 @@
 import { Router } from 'express';
 // 1. Agregamos clearRoomMessages a la importación
-import { createRoom, getMyRooms, deleteRoom, updateRoom, getRoomById, getRoomMessages, clearRoomMessages } from '../controllers/room.controller';
+import { createRoom, getMyRooms, deleteRoom, updateRoom, getRoomById, getRoomMessages, clearRoomMessages, joinRoom, leaveRoom } from '../controllers/room.controller';
 import { authMiddleware } from '../middlewares/authMiddleware';
 
 const router = Router();
@@ -34,6 +34,12 @@ router.get('/', authMiddleware, getMyRooms);
  * description: Sala no encontrada o ID inválido
  */
 router.get('/:id', authMiddleware, getRoomById);
+
+// Unirse a una sala
+router.post('/:id/join', authMiddleware, joinRoom);
+
+// Salir de una sala
+router.post('/:id/leave', authMiddleware, leaveRoom);
 
 // 3. Obtener historial de mensajes
 /**
